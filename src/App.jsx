@@ -87,7 +87,8 @@ export default function App() {
   const [employees, setEmployees] = useState(INITIAL_EMPLOYEES);
   const [tasks, setTasks] = useState(MASTER_TASKS);
   
-  const [sheetUrl, setSheetUrl] = useState(() => localStorage.getItem('maint_google_sheet_url') || '');
+  // ★ ฝังลิงก์ Google Web App ถาวรเรียบร้อยแล้ว
+  const [sheetUrl, setSheetUrl] = useState('https://script.google.com/macros/s/AKfycbwfrvVXBh_F5KKbwGkXEVPrgCL4FvCOYa2p4eBJCYqwm8F0K8HEuF7u2sTGFb-OJgPI/exec');
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
 
@@ -143,15 +144,6 @@ export default function App() {
       setSyncStatus('ใช้ข้อมูลสำรองในเครื่อง (เชื่อมต่อ Sheet ไม่ได้)');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleSaveSheetUrl = (newUrl) => {
-    const trimmed = newUrl.trim();
-    setSheetUrl(trimmed);
-    localStorage.setItem('maint_google_sheet_url', trimmed);
-    if (trimmed) {
-      fetchDataFromGoogleSheet();
     }
   };
 
@@ -488,7 +480,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* GOOGLE SHEETS SYNC & SHIFT BAR */}
+        {/* SYNC & SHIFT BAR */}
         <div className="bg-slate-950 px-4 py-2 border-t border-slate-800/80 text-xs text-slate-300">
           <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3 flex-wrap">
@@ -526,13 +518,6 @@ export default function App() {
                 </select>
               </div>
 
-              <input
-                type="text"
-                placeholder="วาง URL Google Web App เพื่อเชื่อมต่อ Sheet..."
-                value={sheetUrl}
-                onChange={(e) => handleSaveSheetUrl(e.target.value)}
-                className="bg-slate-900 text-xs border border-slate-700 text-slate-200 px-2.5 py-1 rounded w-56 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
               {isLoading && <span className="text-[11px] text-amber-400 animate-pulse">กำลังซิงค์...</span>}
               {syncStatus && !isLoading && <span className="text-[11px] text-emerald-400 font-medium">{syncStatus}</span>}
             </div>
