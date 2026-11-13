@@ -58,8 +58,21 @@ const MASTER_TASKS = [
   { id: 'T6', name: 'งานสนับสนุน ล้างทำความสะอาด/จัดเก็บอะไหล่', category: 'Support' }
 ];
 
+// ฟังก์ชันแปลงวันที่ให้เป็น YYYY-MM-DD เสมอเพื่อป้องกันปัญหาข้อมูลไม่ตรงกัน
+const formatDateString = (dateInput) => {
+  if (!dateInput) return new Date().toISOString().split('T')[0];
+  const dateObj = new Date(dateInput);
+  if (!isNaN(dateObj.getTime())) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(dateInput).substring(0, 10);
+};
+
 const getInitialEvaluations = () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateString(new Date());
   return [
     {
       id: 'EVAL-001',
@@ -87,7 +100,6 @@ export default function App() {
   const [employees, setEmployees] = useState(INITIAL_EMPLOYEES);
   const [tasks, setTasks] = useState(MASTER_TASKS);
   
-  // ★ ฝังลิงก์ Google Web App ถาวรเรียบร้อยแล้ว
   const [sheetUrl, setSheetUrl] = useState('https://script.google.com/macros/s/AKfycbwfrvVXBh_F5KKbwGkXEVPrgCL4FvCOYa2p4eBJCYqwm8F0K8HEuF7u2sTGFb-OJgPI/exec');
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
@@ -102,17 +114,17 @@ export default function App() {
   const [selectedEvaluateeIds, setSelectedEvaluateeIds] = useState([]);
   const [assessmentData, setAssessmentData] = useState({});
 
-  const [selectedWorkDate, setSelectedWorkDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedWorkDate, setSelectedWorkDate] = useState(formatDateString(new Date()));
   const [selectedShiftOverride, setSelectedShiftOverride] = useState('AUTO');
 
   const [adminViewMode, setAdminViewMode] = useState('daily');
-  const [selectedDailyDate, setSelectedDailyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDailyDate, setSelectedDailyDate] = useState(formatDateString(new Date()));
   const [dateFilterStart, setDateFilterStart] = useState(() => {
     const d = new Date();
     d.setDate(1);
-    return d.toISOString().split('T')[0];
+    return formatDateString(d);
   });
-  const [dateFilterEnd, setDateFilterEnd] = useState(new Date().toISOString().split('T')[0]);
+  const [dateFilterEnd, setDateFilterEnd] = useState(formatDateString(new Date()));
 
   const [detailModalEmployee, setDetailModalEmployee] = useState(null);
 
@@ -137,7 +149,14 @@ export default function App() {
       const data = await response.json();
       if (data.employees && data.employees.length > 0) setEmployees(data.employees);
       if (data.tasks && data.tasks.length > 0) setTasks(data.tasks);
-      if (data.evaluations) setEvaluations(data.evaluations);
+      if (data.evaluations) {
+        // จัดรูปวันเดือนปีของ evaluations ที่ดึงมาให้เป็นมาตรฐาน YYYY-MM-DD
+        const formattedEvals = data.evaluations.map(item => ({
+          ...item,
+          workDate: formatDateString(item.workDate)
+        }));
+        setEvaluations(formattedEvals);
+      }
       setSyncStatus('ซิงค์ข้อมูลสำเร็จ');
     } catch (err) {
       console.warn('Google Sheet fetch error (using local fallback):', err);
@@ -173,7 +192,7 @@ export default function App() {
 
     return {
       shift,
-      formattedWorkDate: baseDate.toISOString().split('T')[0]
+      formattedWorkDate: formatDateString(baseDate)
     };
   }, [selectedWorkDate, selectedShiftOverride]);
 
@@ -490,7 +509,7 @@ export default function App() {
                 <input
                   type="date"
                   value={selectedWorkDate}
-                  onChange={(e) => setSelectedWorkDate(e.target.value)}
+                  onChange={(e) => setSelectedWorkDate(formatDateString(e.target.value))}
                   className="bg-slate-900 border border-slate-700 text-emerald-400 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </span>
@@ -712,7 +731,7 @@ export default function App() {
                       <input
                         type="date"
                         value={selectedWorkDate}
-                        onChange={(e) => setSelectedWorkDate(e.target.value)}
+                        onChange={(e) => setSelectedWorkDate(formatDateString(e.target.value))}
                         className="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded px-2 py-1 font-mono focus:ring-indigo-500 focus:border-indigo-500"
                       />
                     </div>
@@ -980,7 +999,7 @@ export default function App() {
                   <input
                     type="date"
                     value={selectedDailyDate}
-                    onChange={(e) => setSelectedDailyDate(e.target.value)}
+                    onChange={(e) => setSelectedDailyDate(formatDateString(e.target.value))}
                     className="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                   />
                 </div>
@@ -990,7 +1009,7 @@ export default function App() {
                   <input
                     type="date"
                     value={dateFilterStart}
-                    onChange={(e) => setDateFilterStart(e.target.value)}
+                    onChange={(e) => setDateFilterStart(formatDateString(e.target.value))}
                     className="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                   />
                   <span className="text-slate-400 text-xs">ถึง</span>
@@ -998,7 +1017,7 @@ export default function App() {
                   <input
                     type="date"
                     value={dateFilterEnd}
-                    onChange={(e) => setDateFilterEnd(e.target.value)}
+                    onChange={(e) => setDateFilterEnd(formatDateString(e.target.value))}
                     className="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                   />
                 </div>
